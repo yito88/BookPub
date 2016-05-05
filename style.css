@@ -1,0 +1,13 @@
+html {
+    font-family: serif;
+    -epub-writing-mode: vertical-rl;
+}
+
+.tcy { 
+    -webkit-text-combine: horizontal; 
+} 
+
+body {
+  height: auto;
+  max-height: 600px;
+}
