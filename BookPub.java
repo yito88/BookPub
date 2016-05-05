@@ -1,4 +1,6 @@
-import pubprocess.*;
+//import pubprocess.*;
+import pubprocess.PubProcess;
+import pubprocess.ReplacedItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +12,6 @@ import javafx.geometry.Pos;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
@@ -21,8 +22,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.*;
 import javafx.scene.input.KeyCode;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 
@@ -31,21 +30,23 @@ import java.io.File;
 public class BookPub extends Application {
     private TextField pathField = new TextField("Select a text file");;
     private ListView<String> replaceListView = new ListView<>();
-    private ObservableList<String> replaceItems = FXCollections.observableArrayList("◇", "□", "■","◆", "▽", "○");
 
     @Override
     public void start(Stage stage) {
+        /* init config parameter */
+        ReplacedItem replacedItem = new ReplacedItem();
+
         TabPane tabs = new TabPane();
         Tab mainTab = new Tab();
         Tab confTab = new Tab();
 
         mainTab.setText("Convert");
         mainTab.setClosable(false);
-        mainTab.setContent(mainPane(stage));
+        mainTab.setContent(mainPane(stage, replacedItem));
 
         confTab.setText("Config");
         confTab.setClosable(false);
-        confTab.setContent(configPane());
+        confTab.setContent(configPane(replacedItem));
 
         tabs.getTabs().addAll(mainTab, confTab);
 
@@ -56,10 +57,10 @@ public class BookPub extends Application {
         stage.show();
     }
 
-    private BorderPane mainPane(Stage stage) {
+    private BorderPane mainPane(Stage stage, ReplacedItem replacedItem) {
         BorderPane pane = new BorderPane();
         pane.setTop(srcBox(stage));
-        pane.setBottom(createConvertButton());
+        pane.setBottom(createConvertButton(replacedItem));
         return pane;
     }
 
@@ -98,13 +99,13 @@ public class BookPub extends Application {
         return ret;
     }
 
-    private HBox createConvertButton() {
+    private HBox createConvertButton(ReplacedItem replacedItem) {
         HBox box = new HBox(8);
         Button cvtButton = new Button("Convert");
 
         cvtButton.setOnAction((ActionEvent) -> {
             PubProcess pub = new PubProcess(pathField.getText());
-            pub.convertFile();
+            pub.convertFile(replacedItem);
         });
 
         box.setPadding(new Insets(12));
@@ -113,38 +114,38 @@ public class BookPub extends Application {
         return box;
     }
 
-    private BorderPane configPane() {
+    private BorderPane configPane(ReplacedItem replacedItem) {
         BorderPane pane = new BorderPane();
         pane.setPadding(new Insets(12, 0, 12, 12));
 
-        replaceListView.setItems(replaceItems);
+        replaceListView.setItems(replacedItem.getItems());
         replaceListView.setMaxHeight(Control.USE_PREF_SIZE);
         replaceListView.setPrefWidth(150.0);
 
         pane.setCenter(replaceListView);
-        pane.setRight(createEditButton());
+        pane.setRight(createEditButton(replacedItem));
         pane.setBottom(createSetButton());
 
         return pane;
     }
 
-    private VBox createEditButton() {
+    private VBox createEditButton(ReplacedItem replacedItem) {
         VBox box = new VBox(8);
         Button addButton = new Button("Add");
         Button delButton = new Button("Delete");
         Button clrButton = new Button("All Delete");
 
         addButton.setOnAction((ActionEvent) -> {
-            addNewReplaceWord();
+            addNewReplaceWord(replacedItem);
         });
 
         delButton.setOnAction((ActionEvent) -> {
             int idx = replaceListView.getSelectionModel().getSelectedIndex();
-            replaceItems.remove(idx);
+            replacedItem.removeItem(idx);
         });
 
         clrButton.setOnAction((ActionEvent) -> {
-            replaceItems.clear();
+            replacedItem.clearAllItems();
         });
 
         box.setPadding(new Insets(12));
@@ -152,7 +153,7 @@ public class BookPub extends Application {
         return box;
     }
 
-    private void addNewReplaceWord() {
+    private void addNewReplaceWord(ReplacedItem replacedItem) {
         BorderPane pane = new BorderPane();
         TextField field = new TextField();
         HBox box = new HBox(8);
@@ -171,32 +172,21 @@ public class BookPub extends Application {
 
         field.setOnKeyPressed((keyEvent) -> {
             if (keyEvent.getCode() == KeyCode.ENTER) {
-                addReplaceItem(stage, field.getText());
+                if (replacedItem.addItem(field.getText())) {
+                    stage.close();
+                }
             }
         });
 
         addButton.setOnAction((ActionEvent) -> {
-            addReplaceItem(stage, field.getText());
+            if (replacedItem.addItem(field.getText())) {
+                stage.close();
+            }
         });
 
         cancelButton.setOnAction((ActionEvent) -> {
             stage.close();
         });
-    }
-
-    private boolean addReplaceItem(Stage stage, String word) {
-        if (replaceItems.contains(word)) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Already Set");
-            alert.setHeaderText(null);
-            alert.setContentText("This word has been already set!");
-            alert.showAndWait();
-            return false;
-        } else {
-            replaceItems.add(word);
-            stage.close();
-            return true;
-        }
     }
 
     private HBox createSetButton() {

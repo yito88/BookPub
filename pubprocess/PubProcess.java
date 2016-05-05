@@ -1,4 +1,5 @@
 package pubprocess;
+import pubprocess.ReplacedItem;
 
 import java.io.*;
 import java.util.*;
@@ -50,7 +51,7 @@ class TextProcess {
         return m.find();
     }
 
-    void setReplaceWord(String before, String after) {
+    void setReplacedWord(String before, String after) {
         ReplacePair pair = new ReplacePair(before, after);
         replaceSet.add(pair);
     }
@@ -99,22 +100,22 @@ class TextProcess {
 
 class OutText extends TextProcess {
     private SrcFile src;
-    private String nextPage = "";
+    private String nextPage = "test";
 
     OutText(SrcFile src) {
         this.src = src;
     }
 
-    void setHeader() {
+    protected void setHeader() {
         initOutFile();
         clearReplaceWord();
         /* set title */
-        setReplaceWord("<title>", ("<title>" + src.name));
+        setReplacedWord("<title>", ("<title>" + src.name));
         /* write header */
         editAndCopy(src, "header.xhtml", false);
     }
 
-    void setFooter() {
+    protected void setFooter() {
         try {
             /* postscript */
             PrintWriter write = new PrintWriter(new BufferedWriter(new FileWriter(src.getOutName(), true)));
@@ -127,22 +128,19 @@ class OutText extends TextProcess {
         }
     }
 
-    void setBodyText() {
+    protected void setBodyText(ReplacedItem replacedItem) {
         clearReplaceWord();
-        /* set replacing words */
-        //setReplaceWord("　◇", (nextPage + "　◇"));
-        //setReplaceWord("　□", (nextPage + "　□"));
-        //setReplaceWord("　■", (nextPage + "　■"));
-        //setReplaceWord("　◆", (nextPage + "　◆"));
-        //setReplaceWord("　○", (nextPage + "　○"));
-        //setReplaceWord("　▽", (nextPage + "　▽"));
+        /* prepare to replace */
+        for (String word: replacedItem.getItems()) {
+            setReplacedWord(word, (nextPage + word));
+        }
         /* ruby */
-        setReplaceWord("｜", "<ruby>");
-        setReplaceWord("《", "<rt>");
-        setReplaceWord("》", "</rt></ruby>");
+        setReplacedWord("｜", "<ruby>");
+        setReplacedWord("《", "<rt>");
+        setReplacedWord("》", "</rt></ruby>");
         /* tcy */
-        setReplaceWord("!\\?", "<span class='tcy'>!\\?</span>");
-        setReplaceWord("!!", "<span class='tcy'>!!</span>");
+        setReplacedWord("!\\?", "<span class='tcy'>!\\?</span>");
+        setReplacedWord("!!", "<span class='tcy'>!!</span>");
         /* write file */
         editAndCopy(src, src.getOrgName(), true);
     }
@@ -167,7 +165,7 @@ public class PubProcess {
         this.fileName = fileName;
     }
 
-    public void convertFile() {
+    public void convertFile(ReplacedItem replacedItem) {
         SrcFile srcFile = new SrcFile(fileName);
         if (!srcFile.ext.equals(".txt")) {
             System.out.println("Supporting text file only.");
@@ -180,7 +178,7 @@ public class PubProcess {
         OutText out = new OutText(srcFile);
 
         out.setHeader();
-        out.setBodyText();
+        out.setBodyText(replacedItem);
         out.setFooter();
     }
 }
