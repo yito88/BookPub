@@ -98,7 +98,6 @@ class TextProcess {
 }
 
 class OutText extends TextProcess {
-    private String header = "header.xhtml";
     private SrcFile src;
     private String nextPage = "";
 
@@ -112,7 +111,7 @@ class OutText extends TextProcess {
         /* set title */
         setReplaceWord("<title>", ("<title>" + src.name));
         /* write header */
-        editAndCopy(src, header, false);
+        editAndCopy(src, "header.xhtml", false);
     }
 
     void setFooter() {

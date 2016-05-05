@@ -2,6 +2,7 @@ import pubprocess.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.awt.event.KeyEvent;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -9,6 +10,7 @@ import javafx.geometry.Pos;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
@@ -18,6 +20,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.ListView;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.*;
+import javafx.scene.input.KeyCode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.stage.Stage;
@@ -27,7 +30,8 @@ import java.io.File;
 
 public class BookPub extends Application {
     private TextField pathField = new TextField("Select a text file");;
-    private ArrayList<String> replaceList = new ArrayList<>(Arrays.asList("◇", "□", "■","◆", "▽", "○"));
+    private ListView<String> replaceListView = new ListView<>();
+    private ObservableList<String> replaceItems = FXCollections.observableArrayList("◇", "□", "■","◆", "▽", "○");
 
     @Override
     public void start(Stage stage) {
@@ -113,43 +117,86 @@ public class BookPub extends Application {
         BorderPane pane = new BorderPane();
         pane.setPadding(new Insets(12, 0, 12, 12));
 
-        updateReplaceList(pane);
-        pane.setRight(createEditButton(pane));
+        replaceListView.setItems(replaceItems);
+        replaceListView.setMaxHeight(Control.USE_PREF_SIZE);
+        replaceListView.setPrefWidth(150.0);
+
+        pane.setCenter(replaceListView);
+        pane.setRight(createEditButton());
         pane.setBottom(createSetButton());
 
         return pane;
     }
 
-    private VBox createEditButton(BorderPane configPane) {
+    private VBox createEditButton() {
         VBox box = new VBox(8);
+        Button addButton = new Button("Add");
         Button delButton = new Button("Delete");
         Button clrButton = new Button("All Delete");
 
+        addButton.setOnAction((ActionEvent) -> {
+            addNewReplaceWord();
+        });
+
         delButton.setOnAction((ActionEvent) -> {
-            // TODO: Delete an item
-            //int idx = listView.getSelectionModel().getSelectedIndex();
+            int idx = replaceListView.getSelectionModel().getSelectedIndex();
+            replaceItems.remove(idx);
         });
 
         clrButton.setOnAction((ActionEvent) -> {
-            replaceList.clear();
-            updateReplaceList(configPane);
+            replaceItems.clear();
         });
 
         box.setPadding(new Insets(12));
-        box.getChildren().addAll(delButton, clrButton);
+        box.getChildren().addAll(addButton, delButton, clrButton);
         return box;
     }
 
-    private void updateReplaceList(BorderPane configPane) {
-        ListView<String> list = new ListView<>();
-        ObservableList<String> items = FXCollections.observableArrayList(replaceList);
-        list.setItems(items);
-        list.setMaxHeight(Control.USE_PREF_SIZE);
-        list.setPrefWidth(150.0);
-        list.setEditable(true);
-        list.setCellFactory(TextFieldListCell.forListView());
+    private void addNewReplaceWord() {
+        BorderPane pane = new BorderPane();
+        TextField field = new TextField();
+        HBox box = new HBox(8);
+        Button addButton = new Button("OK");
+        Button cancelButton = new Button("Cancel");
 
-        configPane.setCenter(list);
+        box.setPadding(new Insets(12));
+        box.getChildren().addAll(addButton, cancelButton);
+        pane.setCenter(field);
+        pane.setBottom(box);
+
+        Stage stage = new Stage();
+        Scene scene = new Scene(pane, 320, 120);
+        stage.setScene(scene);
+        stage.show();
+
+        field.setOnKeyPressed((keyEvent) -> {
+            if (keyEvent.getCode() == KeyCode.ENTER) {
+                addReplaceItem(stage, field.getText());
+            }
+        });
+
+        addButton.setOnAction((ActionEvent) -> {
+            addReplaceItem(stage, field.getText());
+        });
+
+        cancelButton.setOnAction((ActionEvent) -> {
+            stage.close();
+        });
+    }
+
+    private boolean addReplaceItem(Stage stage, String word) {
+        if (replaceItems.contains(word)) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Already Set");
+            alert.setHeaderText(null);
+            alert.setContentText("This word has been already set!");
+            alert.showAndWait();
+            return false;
+        } else {
+            replaceItems.add(word);
+            stage.close();
+            return true;
+        }
     }
 
     private HBox createSetButton() {
